@@ -1,0 +1,98 @@
+                            FUNCTIONAL  DEPENDENCIES
+
+post_office (key - pin)
+pin -> pname
+pin -> locality
+pin -> city
+pin -> state
+
+managed_by (key - mgr_id,pin)
+mgr_id,pin -> from_date
+mgr_id,pin -> to_date
+
+manager (key - mgr_id)
+mgr_id -> fname
+mgr_id -> lname
+mgr_id -> D.o.B.
+mgr_id -> gender
+mgr_id -> Date_of_join
+mgr_id -> income
+mgr_id -> locality
+mgr_id -> city
+mgr_id -> state
+
+scheme (key - scheme_id)
+scheme_id -> name 
+scheme_id -> Type_of_plan
+scheme_id -> min_age_required
+scheme_id -> tenure
+scheme_id -> min_dep
+scheme_id -> interest_rate
+
+account (key - account_no,date_of_trans)
+account_no,date_of_trans -> pin
+account_no,date_of_trans -> cid
+account_no,date_of_trans -> scheme_id
+account_no,date_of_trans -> start_date
+account_no,date_of_trans -> transaction
+
+
+item (key - item_id)
+item_id -> weight
+item_id -> distance
+item_id -> source
+item_id -> destination
+item_id -> r_date
+item_id -> d_date
+item_id -> pin
+item_id -> sid
+item_id -> from_weight
+item_id -> to_weight
+item_id -> from_distance
+item_id -> to_distance
+item_id -> type
+item_id -> cost
+
+Investor (key - cid)
+cid -> fname
+cid -> lname
+cid -> age
+cid -> gender
+cid -> occupation
+cid -> locality
+cid -> city
+cid -> state
+
+
+sender (key - sid)
+sid -> fname
+sid -> lname
+sid -> locality
+sid -> city
+sid -> state
+
+
+w_cost (key - from_weight,to_weight,type)
+from_weight,to_weight,type -> w_cst
+
+d_cost (key - from_distance,to_distance,type)
+from_distance,to_distance,type -> d_cst
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

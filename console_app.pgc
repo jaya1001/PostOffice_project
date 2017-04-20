@@ -1,0 +1,638 @@
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<math.h>
+#include "sqlca.h"
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+  typedef struct
+  {
+    int sum;
+    int scheme_id;
+    char name[30];
+    int year1;
+  }query2_rec;
+
+  typedef struct
+  {
+    int id;
+    char name[30];
+    float rate;
+    int depo;
+    int ten;
+    int acc;
+  }query4_rec;
+
+  typedef struct
+  {
+    int no_of_new_customers;
+    int scheme_id;
+    char name[30];
+    int yr;
+  }query8_rec;
+
+  typedef struct
+  {
+    int trans;
+    int acco;
+    char r_date[12];
+    int cid;
+  }query11_rec;
+
+  typedef struct
+  {
+    int pin;
+    char fname[20];
+    char from_date[12];
+  }query10_rec;
+
+  typedef struct
+  {
+    int delivery;
+    int pin;
+    int year1;
+  }query6_rec;
+
+  typedef struct
+  {
+    int delivery;
+    int revenue;
+    char post[20];
+  }query9_rec;
+
+  int mgr_id;
+  char fname[20];
+  char gender[10];
+  char date_of_birth[12];
+  char date_of_join[12];
+  int income;
+
+  int pin;
+  char to_date[12];
+  char from_date[12];
+
+  int cid;
+  int age;
+
+  int from_weight;
+  int to_weight;
+  char type[20];
+  int w_cst;
+  int from_distance;
+  int to_distance;
+  int d_cst;
+
+  int scheme_id;
+  char name[30];
+  float interest_rate;
+  float tenure;
+  int min_dep;
+
+  int account_no;
+  char date_of_trans[12];
+  char start_date[12];
+  int transaction;
+  int sid;
+
+  int item_id;
+  float weight;
+  int distance;
+  char source[20];
+  char destination[20];
+  char t_date[12];
+  char s_date[12];
+
+EXEC SQL END DECLARE SECTION;
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query1()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+    int id;
+    int investment=0;
+  EXEC SQL END DECLARE SECTION;
+  printf("enter id\n");
+  scanf("%d",&id);
+  EXEC SQL SELECT sum(account.transaction),account.scheme_id,name into :investment,:scheme_id,:name from account natural join scheme  where account.transaction>0 and account.scheme_id = :id group by account.scheme_id,scheme.name;
+  printf("total investment in %s with id %d is %d.\n\n",name,id,investment);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query2()
+{
+
+  EXEC SQL BEGIN DECLARE SECTION;
+    int year2;
+    int year3;
+    int sum1=0,sum2=0,sume=0;
+    query2_rec work;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL DECLARE cur CURSOR FOR
+  select sum1, scheme_id,name,year3 from 
+  (select sum(transaction) as sum1,account.scheme_id,name,extract(year from date_of_trans) as year3 from account natural join scheme    where (transaction>0)
+  group by account.scheme_id,name,year3) as r1
+  natural join
+  (select max(sume) as sum1,year3 from
+  (select sum(transaction) as sume,account.scheme_id,name,extract(year from date_of_trans) as year3 from account natural join scheme 
+  where (transaction>0)
+  group by account.scheme_id,name,year3 ) as r group by r.year3) as r2
+  where (r1.year3=r2.year3 and r1.sum1=r2.sum1) order by year3;
+
+  printf("sum\t\t scheme_id\t\t name\t\t\t\t\t year\n");
+  EXEC SQL OPEN cur;
+  EXEC SQL FETCH cur into :work ;
+
+  while(sqlca.sqlcode==0) 
+  {
+    printf("%d\t\t\t%d\t\t%s\t\t\t%d\n",work.sum,work.scheme_id,work.name,work.year1);
+    EXEC SQL FETCH cur into :work;
+  }
+  printf("\n");
+
+  EXEC SQL CLOSE cur;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query3()
+{
+
+  EXEC SQL BEGIN DECLARE SECTION;
+    int max;
+    int count;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL select max,scheme_id,name into :max,:scheme_id,:name from 
+  (select count(distinct cid) as max, scheme_id,name from account natural join scheme group by account.scheme_id,name) as r1
+  natural join
+  (select max(count) as max from (select count(distinct cid) as count, scheme_id,name from account natural join scheme group by account.scheme_id,name) as r2) as r3 where r1.max = r3.max;
+  printf("Maximum number of investors are %d in scheme %s with id %d\n\n",max,name,scheme_id); 
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query4()
+{
+
+  EXEC SQL BEGIN DECLARE SECTION;
+    query4_rec work;
+    int ci,sum=0;
+    int maturity_amount=0;
+    int profit;
+  EXEC SQL END DECLARE SECTION;
+
+  printf("enter the customer id\n");
+  scanf("%d",&ci);
+  printf("\n");
+
+  EXEC SQL DECLARE cur4 CURSOR FOR SELECT scheme_id,name,interest_rate,sum(transaction) as sum,tenure,account_no from account natural  join scheme where cid = :ci and transaction>0 group by cid,scheme_id,name,interest_rate,tenure,account_no;
+  EXEC SQL OPEN cur4;
+
+  printf("scheme_id\t name\t\t\tamount_deposited\t tenure\t\tamount_matured\t\tprofit\n\n");
+  EXEC SQL FETCH cur4 into :work ;
+  while(sqlca.sqlcode==0) 
+  {
+    maturity_amount=0;
+    profit=0;
+
+    if(work.id==1)
+      maturity_amount = work.depo + (work.depo*work.rate*1810)/72000;
+
+    else if(work.id==2 || work.id==3)
+      maturity_amount = work.depo + (5*work.rate*work.depo)/100;
+
+    else if(work.id==5 || work.id==6 || work.id==7 || work.id==4)
+      maturity_amount = work.depo + (work.ten*work.rate*work.depo)/100;
+    
+    else if(work.id==8)
+      maturity_amount = work.depo + (120*work.rate*work.depo)/1500;
+
+    else
+      maturity_amount = 2*work.depo;
+
+    profit = (maturity_amount-work.depo)*100/work.depo;
+    printf("%d\t\t%s\t\t%d\t\t  %d\t\t%d\t\t\t%d\n\n",work.id,work.name,work.depo,work.ten,maturity_amount,profit);
+    EXEC SQL FETCH cur4 into :work; 
+  }
+  EXEC SQL CLOSE cur4;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query5()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+   int maturity_amount=0;
+   int withdraw;
+   int r;
+   int co=-1;
+  EXEC SQL END DECLARE SECTION;
+  printf("Enter your account_no\n\n");
+  scanf("%d",&account_no);
+  EXEC SQL SELECT valid_user_withdraw(:account_no) into :co;
+
+  if(co==1)
+  {
+    EXEC SQL SELECT distinct start_date into :s_date from account where account_no = :account_no;
+    EXEC SQL SELECT scheme_id,interest_rate,transaction,tenure into :scheme_id,:interest_rate,:transaction,:tenure from account natural   join scheme where account.account_no = account_no and date_of_trans = :s_date::date;
+
+    if(scheme_id==1)
+      maturity_amount = transaction*60 + (transaction*interest_rate*1810)/1200;
+
+    else if(scheme_id==2 || scheme_id==3)
+    {
+      EXEC SQL SELECT sum(transactions) into :withdraw from account where account.acccount_no = :account_no and account.transaction<0
+      group by account.account_no;
+      maturity_amount = transaction + (5*interest_rate*transaction)/100 + withdraw;
+    }
+
+    else if(scheme_id==5 || scheme_id==6 || scheme_id==7 || scheme_id==4)
+      maturity_amount = transaction + (tenure*interest_rate*transaction)/100; 
+
+    else if(scheme_id==8)
+      maturity_amount = 15*transaction + (120*interest_rate*transaction)/100;
+
+    else
+      maturity_amount = 2*transaction;
+ 
+      printf("maturity_amount you will receive is %d if there will be no future withdraw from now on\n\n",maturity_amount);
+  }
+
+  else
+   printf("invalid account number\n");
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query6()
+{
+
+  EXEC SQL BEGIN DECLARE SECTION;
+   query6_rec work;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL DECLARE cur6 CURSOR FOR SELECT max,pin,year1 from
+  (select count(item_id) as max,pin,extract(year from d_date) as year1 from item group by year1,pin) as r1
+   natural join
+  (select max(sum) as max,year1 from (select count(item_id) as sum,pin,extract(year from d_date) as year1 from item group by year1,pin)
+  as r3 group by year1) as r2 where r1.max = r2.max and r1.year1 = r2.year1;
+  EXEC SQL OPEN cur6;
+
+  printf("Max deliveries\t pin_no\t\t year\n\n");
+  EXEC SQL FETCH cur6 into :work ;
+
+  while(sqlca.sqlcode==0) 
+  {
+    printf("%d\t\t %d\t\t %d\n\n",work.delivery,work.pin,work.year1);
+    EXEC SQL FETCH cur6 into :work;
+  }
+
+  EXEC SQL CLOSE cur6;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query7()
+{
+
+  EXEC SQL BEGIN DECLARE SECTION;
+   int sum2=0,sum=0;
+   int investment;
+   int pid;
+  EXEC SQL END DECLARE SECTION;
+
+  printf("enter the pin\n");
+  scanf("%d",&pid);
+  printf("\n");
+
+  EXEC SQL select sum,scheme_id,name,pin into :investment,:scheme_id,:name,:pin from scheme natural join 
+  (select sum,scheme_id,pin from
+  (SELECT max(sum2) as sum from (SELECT sum(transaction) as sum2,scheme_id,pin from account where transaction>0 and pin = :pid group by scheme_id,pin) as r1) as r natural join
+  (SELECT sum(transaction) as sum,scheme_id,pin from account where transaction>0 and pin = :pid group by scheme_id,pin) as r2
+  where r.sum=r2.sum) as r3;
+
+  printf("Investment\t scheme_id\t scheme_name\t pin\n\n");
+  printf("%d\t %d\t %s\t %d\n\n",investment,scheme_id,name,pin);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query8()
+{
+
+  EXEC SQL BEGIN DECLARE SECTION;
+   int year1;
+   query8_rec work;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL DECLARE cur8 CURSOR FOR SELECT count(account_no),scheme_id,name,extract(year from start_date) as year1 from account natural  join scheme group by scheme_id,year1,name order by year1;
+  EXEC SQL OPEN cur8;
+
+  printf("No. Of new customers\t scheme_id\t scheme_name\tyear\n\n");
+  while(sqlca.sqlcode==0)
+  {
+    EXEC SQL FETCH cur8 into :work;
+    printf("%d\t\t %d\t\t %s\t\t %d\n\n",work.no_of_new_customers,work.scheme_id,work.name,work.yr);
+  }
+
+  EXEC SQL CLOSE cur8;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query9()
+{ 
+
+  EXEC SQL BEGIN DECLARE SECTION;
+   query9_rec work;
+   int yr;
+  EXEC SQL END DECLARE SECTION;
+
+  printf("enter the year\n");
+  scanf("%d",&yr);
+  printf("\n");
+
+  EXEC SQL DECLARE cur9 CURSOR FOR SELECT count(item_id),sum(cost),type from item where extract(year from d_date) = :yr group by type;
+  EXEC SQL OPEN cur9;
+
+  printf("No of deliveries\t total revenue\t type of post\n\n");
+  EXEC SQL FETCH cur9 into :work;
+
+  while(sqlca.sqlcode==0) 
+  {
+    printf("%d\t\t %d\t\t %s\n\n",work.delivery,work.revenue,work.post);
+    EXEC SQL FETCH cur9 into :work;
+  }
+
+  EXEC SQL CLOSE cur9;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query10()
+{
+
+  EXEC SQL BEGIN DECLARE SECTION;
+  query10_rec work;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL DECLARE cur10 CURSOR FOR SELECT pin,fname,from_date from managed_by natural join manager where gender='female' and to_date   is null; 
+  EXEC SQL OPEN cur10;
+
+  printf("pin_no\t manager_name\t joining date\n\n");
+  EXEC SQL FETCH cur10 into :work ;
+
+  while(sqlca.sqlcode==0) 
+    {
+      printf("%d\t %s\t %s\n\n",work.pin,work.fname,work.from_date);
+      EXEC SQL FETCH cur10 into :work;
+    }
+
+  EXEC SQL CLOSE cur10;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query11()
+{
+
+  EXEC SQL BEGIN DECLARE SECTION;
+   query11_rec work;
+   int acc;
+   int cr=-1;
+   const char *mystmt;
+  EXEC SQL END DECLARE SECTION;
+
+  printf("enter dates and account_no\n");
+  scanf("%s%s%d",&s_date,&t_date,&acc);
+  printf("\n");
+  
+  mystmt =" SELECT valid_account(:acc) ";
+  EXEC SQL PREPARE mystmt FROM :mystmt;
+  EXEC SQL EXECUTE mystmt INTO :cr using :acc;
+  printf("%d\n",cr);
+
+  if(cr==1)
+  {
+    EXEC SQL DECLARE cur11 CURSOR FOR SELECT transaction,account_no,date_of_trans,cid from account where date_of_trans >=:s_date::date   and date_of_trans <=  :t_date::date and account_no = :acc;
+    EXEC SQL OPEN cur11;
+
+    printf("transaction\t account_no\t date_of_trans\t cid\n\n");
+
+    while(sqlca.sqlcode==0)
+    {
+      EXEC SQL FETCH cur11 into :work;
+      printf("%d\t %d\t %s\t %d\n\n",work.trans,work.acco,work.r_date,work.cid);
+    }
+
+    EXEC SQL CLOSE cur11;
+  }
+
+  if(cr==0)
+    printf("invalid account number\n");
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void query12()
+{
+  EXEC SQL BEGIN DECLARE SECTION;
+ int t,c1,c2,acc,amt;
+ const char *mystmt1;
+ const char *mystmt2;
+ const char *mystmt3;
+ const char *mystmt4;
+ char tod_date[12];
+ EXEC SQL END DECLARE SECTION;
+
+ printf("enter account no.,amount\n");
+ scanf("%d %d",&acc,&amt);
+
+ printf("what do you want\n1. deposit\n2. withdrawal\n");
+ scanf("%d",&t);
+ printf("\n"); 
+
+ if(t==1)
+  {
+    mystmt1 =" SELECT valid_user_deposit(:acc) ";
+    EXEC SQL PREPARE mystmt1 FROM :mystmt1;
+    EXEC SQL EXECUTE mystmt1 INTO :c1 using :acc;
+   
+    if(c1==1)
+    {
+      printf("Valid acoount no.\n");
+      mystmt2 =" SELECT deposit_check(:acc,:amt) ";
+      EXEC SQL PREPARE mystmt2 FROM :mystmt2;
+      EXEC SQL EXECUTE mystmt2 INTO :c2 using :acc,:amt;
+   
+      if(c2==1)
+      {
+        printf("You can make deposit\n");
+        printf("enter today's date");
+        scanf("%s",&tod_date);
+              
+        EXEC SQL SELECT distinct pin,cid,scheme_id,start_date into :pin,:cid,:scheme_id,:start_date from account where account_no=:acc;
+        EXEC SQL set transaction read write;
+        EXEC SQL insert into account (pin,cid,scheme_id,account_no,date_of_trans,transaction,start_date) values(:pin,:cid,:scheme_id,:acc,:tod_date,:amt,:start_date);
+      }
+      if(c2==0)
+        printf("You can't make deposit today!\n");
+    }
+    if(c1==0)
+      printf("oops,something went wrong\n");
+  }
+ if(t==2)
+  {
+    mystmt3 =" SELECT valid_user_withdraw(:acc) ";
+    EXEC SQL PREPARE mystmt3 FROM :mystmt3;
+    EXEC SQL EXECUTE mystmt3 INTO :c1 using :acc;
+
+    if(c1==1)
+    {
+      printf("Valid account no.\n");
+      mystmt4 =" SELECT withdrawal_check(:acc,:amt) ";
+      EXEC SQL PREPARE mystmt4 FROM :mystmt4;
+      EXEC SQL EXECUTE mystmt4 INTO :c2 using :acc,:amt;
+      if(c2==1)
+      {
+        printf("You can make withdraw\n");
+        printf("enter today's date");
+        scanf("%s",&tod_date);
+
+        EXEC SQL SELECT distinct pin,cid,scheme_id,start_date into :pin,:cid,:scheme_id,:start_date from account where account_no=:acc;
+        EXEC SQL set transaction read write;
+        EXEC SQL insert into account(pin,cid,scheme_id,account_no,date_of_trans,transaction,start_date) values(:pin,:cid,:scheme_id,:acc,:tod_date,:amt,:start_date);
+      }
+      if(c2==0)
+        printf("oops,something went wrong\n");
+    }
+   if(c1==0)
+    printf("oops,something went wrong\n");
+  }
+  EXEC SQL commit; 
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+// main function.
+
+
+int main()
+{
+  EXEC SQL INCLUDE sqlca;
+  EXEC SQL BEGIN DECLARE SECTION;
+   int choice=0;
+   const char *target = "201551076@10.100.1.62:5432";
+   const char *user = "201551076";
+   const char *password = "201551076"; 
+  EXEC SQL END DECLARE SECTION;
+  EXEC SQL CONNECT TO :target USER :user IDENTIFIED BY "201551076";
+  EXEC SQL set search_path to postal_service;	
+
+	while(choice!=13)
+  {
+	  printf("\t\t\t\t\t\t\t POSTAL SERVICES DATABASE\n\n");
+	  printf("The queries you can perform for this database are -\n\n");
+	  printf("1.Overall investment till now in a particular scheme.\n\n");
+    printf("2.Maximum invested scheme amongst all the schemes for each year.\n\n");
+	  printf("3.Scheme with maximum investors.\n\n");
+    printf("4.profits in  different schemes for a customer amongst all the schemes in which he/she has invested.\n\n");
+	  printf("5.detail of any scheme in which a customer has invested and its maturity amount\n\n");
+	  printf("6.Maximum deliveries by the post offices in each year.\n\n");
+	  printf("7.Which scheme gets the maximum investment in a particular post office\n\n");
+	  printf("8.No. of customers invested in each year in all the schemes\n\n");
+	  printf("9.Amount paid by customers in a particular type of post in each year.\n\n");
+	  printf("10.Details of the female managers from all the post offices.\n\n");
+	  printf("11.Transactions between any two days by a customer in a scheme.\n\n");
+    printf("12.Make a transaction.\n\n");
+    printf("13.Exit.\n\n");
+
+	  printf("enter the number of query u want to know\n");
+	  scanf("%d",&choice);
+
+	  if(choice==1)
+		 query1();
+	  else if(choice==2)
+		 query2();
+	  else if(choice==3)
+		 query3();
+	  else if(choice==4)
+		 query4();
+	  else if(choice==5)
+		 query5();
+	  else if(choice==6)
+		 query6();
+	  else if(choice==7)
+		 query7();
+	  else if(choice==8)
+		 query8();
+	  else if(choice==9)
+		 query9();
+	  else if(choice==10)
+		 query10();
+	  else if(choice==11)
+		 query11();
+    else if(choice==12)
+     query12();
+    else if(choice==13)
+     break;
+    else
+     printf("Invalid Choice");
+	}
+}
